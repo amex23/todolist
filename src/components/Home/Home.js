@@ -249,7 +249,7 @@ const TodoItem = ({ item, items, setItems }) => {
         {edit ? (
           <>
             <Textarea value={value} onChange={(e) => setValue(e.target.value)} />
-            sds
+            
           </>
           
         ) : (
