@@ -72,7 +72,7 @@ const Login = (props) => {
           />
         </div>
         <div className={classes.actions}>
-          <Button type="submit" className={classes.btn} disabled={!formIsValid}>
+          <Button type="submit" className="bg-[#DD0DB0] text-white rounded-md px-4 py-2 " disabled={!formIsValid}>
             Login
           </Button>
         </div>

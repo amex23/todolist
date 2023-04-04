@@ -5,3 +5,7 @@
   margin: 2rem auto;
   text-align: center;
 }
+
+ul li {
+  list-style: none !important;
+}

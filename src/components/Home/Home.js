@@ -1,245 +1,373 @@
+import { useState, useEffect } from "react";
+import Card from "../UI/Card/Card";
+import classes from "./Home.css";
 
+import React from "react";
+import {
+  Box,
+  UnorderedList,
+  ListItem,
+  Button,
+  Textarea,
+} from "@chakra-ui/react";
 
-import Card from '../UI/Card/Card';
-import classes from './Home.module.css';
+const Comment = ({ comment, item, items, setItems }) => {
+  const { title, id, edit } = comment;
+  const { id: todoId, comments } = item;
 
-import React, {Component} from 'react';
-import { Button, Input, Textarea   } from '@chakra-ui/react'
+  const [error, setError] = useState(null);
+  const [value, setValue] = useState(title);
 
-export default class Home extends Component {
-  constructor () {
-    super ();
-    this.state = {
-      todo_array: [],
-      task: '',
-      edit_task: '',
-    };
+  const onEdit = () => {
+    setError(null);
+
+    const index = items.findIndex((t) => t.id === todoId);
+    const newItems = [...items];
+
+    const newComments = [...comments];
+    const commentIndex = newComments.findIndex((c) => c.id === id);
+    const comment = newComments.find((c) => c.id === id);
+
+    if (edit) {
+      if (!value) {
+        setError("Please enter a comment");
+        return;
+      }
+
+      newComments.splice(commentIndex, 1, {
+        ...comment,
+        title: value,
+        edit: false,
+      });
+
+      newItems.splice(index, 1, {
+        ...item,
+        comments: newComments,
+      });
+      setItems(newItems);
+      return;
+    }
+
+    newComments.splice(commentIndex, 1, {
+      ...comment,
+      edit: true,
+    });
+
+    newItems.splice(index, 1, {
+      ...item,
+      comments: newComments,
+    });
+    setItems(newItems);
+  };
+
+  const onDelete = () => {
+    // find todo
+    const index = items.findIndex((t) => t.id === todoId);
+
+    // find comment
+    const newItems = [...items];
+    newItems.splice(index, 1, {
+      ...item,
+      comments: comments.filter((c) => c.id !== id),
+    });
+
+    setItems(newItems);
+  };
+
+  const onCancel = () => {
+    setError(null);
+    // find todo
+    const index = items.findIndex((t) => t.id === todoId);
+
+    // find comment
+    const newItems = [...items];
+
+    const newComments = [...comments];
+    const commentIndex = newComments.findIndex((c) => c.id === id);
+    const comment = newComments.find((c) => c.id === id);
+    newComments.splice(commentIndex, 1, {
+      ...comment,
+      edit: false,
+    });
+
+    newItems.splice(index, 1, {
+      ...item,
+      comments: newComments,
+    });
+
+    setItems(newItems);
+  };
+
+  return (
+    <ListItem>
+      <div
+        style={{
+          display: "flex",
+          gap: 5,
+          marginBottom: 5,
+        }}
+      >
+        {edit ? (
+          <Textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Enter comment"
+          />
+        ) : (
+          <span>{title}</span>
+        )}
+
+        <Button colorScheme="green" onClick={onEdit} size="sm">
+          {edit ? "Save" : "Edit"}
+        </Button>
+        {edit && (
+          <Button colorScheme="blue" onClick={onCancel} size="sm">
+            Cancel
+          </Button>
+        )}
+
+        <Button colorScheme="red" onClick={onDelete} size="sm">
+          Delete
+        </Button>
+      </div>
+      {error && (
+        <span
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </span>
+      )}
+    </ListItem>
+  );
+};
+
+const Comments = ({ item, items, setItems }) => {
+  const { comments = [] } = item;
+
+  if (comments.length === 0) {
+    return <small>No comments</small>;
   }
 
-  onChangeTask = e => {
-    this.setState ({
-      task: e.target.value,
-    });
-  };
+  return (
+    <UnorderedList>
+      {comments.map((comment, i) => (
+        <Comment
+          key={i}
+          comment={comment}
+          item={item}
+          items={items}
+          setItems={setItems}
+        />
+      ))}
+    </UnorderedList>
+  );
+};
 
-  addTask = () => {
-    let {todo_array, task} = this.state;
-    let obj = {
-      id: todo_array.length == 0 ? 1 : todo_array[todo_array.length - 1].id + 1,
-      name: task,
-      is_editing: false,
-      is_done: false,
-    };
-    todo_array.push (obj);
-    this.setState ({
-      todo_array: todo_array,
-      task: '',
-    });
-  };
+// render each todo item
+const TodoItem = ({ item, items, setItems }) => {
+  // todo item props
+  const { title, id, edit, comments = [] } = item;
 
-  edit = object => {
-    let {todo_array} = this.state;
+  // erros state, when editing todo but empty
+  const [error, setError] = useState(null);
 
-    let i = todo_array.findIndex (task => task.id === object.id);
-    todo_array[i].is_editing = !todo_array[i].is_editing;
+  // current edited todo item
+  const [value, setValue] = useState(title);
 
-    todo_array.map (task => {
-      task.id !== object.id
-        ? (task.is_editing = false)
-        : (task.is_editing = task.is_editing);
-      return task;
-    });
+  const onEdit = () => {
+    setError(null);
 
-    this.setState ({
-      todo_array: todo_array,
-      edit_task: object.name,
-    });
-  };
+    const index = items.findIndex((t) => t.id === id);
+    const todoItem = items.find((t) => t.id === id);
+    const newItems = [...items];
 
-  editTask = task => {
-    this.setState ({
-      edit_task: task,
-    });
-  };
-
-  saveEditTask = object => {
-    let {todo_array, edit_task} = this.state;
-    let i = todo_array.findIndex (task => task.id === object.id);
-    todo_array[i].name = edit_task;
-
-    this.setState (
-      {
-        todo_array: todo_array,
-        edit_task: '',
-      },
-      e => {
-        this.edit (object);
+    if (edit) {
+      if (!value) {
+        setError("Please enter a value");
+        return;
       }
-    );
-  };
 
-  delete = object => {
-    let {todo_array} = this.state;
-    let i = todo_array.findIndex (task => task.id === object.id);
-    todo_array.splice (i, 1);
-    this.setState ({
-      todo_array: todo_array,
+      newItems.splice(index, 1, {
+        ...todoItem,
+        edit: false,
+        title: value,
+      });
+      setItems(newItems);
+      return;
+    }
+
+    newItems.splice(index, 1, {
+      ...todoItem,
+      edit: true,
     });
+    setItems(newItems);
   };
 
-  done = object => {
-    let {todo_array} = this.state;
-    let i = todo_array.findIndex (task => task.id === object.id);
-    todo_array[i].is_done = true;
+  const onDelete = () => {
+    const newItems = items.filter((item) => item.id !== id);
+    setItems(newItems);
+  };
 
-    this.setState ({
-      todo_array: todo_array,
+  const onCancel = () => {
+    setError(null);
+    const index = items.findIndex((t) => t.id === id);
+    const todoItem = items.find((t) => t.id === id);
+    const newItems = [...items];
+
+    newItems.splice(index, 1, {
+      ...todoItem,
+      edit: false,
     });
+    setItems(newItems);
   };
 
+  const onAddComment = () => {
+    const index = items.findIndex((t) => t.id === id);
+    const todoItem = items.find((t) => t.id === id);
+    const newItems = [...items];
 
-  addComment = () => {
-    let {comment_array, comment} = this.state;
-    let obj = {
-      id: comment_array.length == 0 ? 1 : comment_array[comment_array.length - 1].id + 1,
-      name: comment,
-      is_editing: false,
-      is_done: false,
-    };
-    comment_array.push (obj);
-    this.setState ({
-      comment_array: comment_array,
-      comment: '',
+    newItems.splice(index, 1, {
+      ...todoItem,
+      comments: [
+        ...comments,
+        {
+          id: `${id}_comment_${comments.length}`,
+          title: null,
+          edit: true,
+        },
+      ],
     });
+
+    setItems(newItems);
   };
 
-  render () {
-    return (
-      <div className='bg-red-400 w-full flex justify-start flex-col items-center h-screen gap-10'>
-        <div className='bg-red-400 w-full bg-green-400 mt-32'>
-          <h2 className='text-center'>My Todo List</h2>
+  return (
+    <div className="">
+      <div className="">
+        {edit ? (
+          <>
+            <Textarea value={value} onChange={(e) => setValue(e.target.value)} />
+            sds
+          </>
+          
+        ) : (
+          <div className="flex justify-center my-4">
+            <span className="text-center">{title}</span>
+          </div>
+        )}
+
+        <div className="flex justify-center gap-3">
+          <Button colorScheme="green" onClick={onEdit} size="sm">
+            {edit ? "Save" : "Edit"}
+          </Button>
+          {edit && (
+            <Button colorScheme="blue" onClick={onCancel} size="sm">
+              Cancel
+            </Button>
+          )}
+
+          <Button colorScheme="red" onClick={onDelete} size="sm">
+            Delete
+          </Button>
+
+          <Button colorScheme="yellow" color="white" onClick={onAddComment} size="sm">
+            Add Comment
+          </Button>
         </div>
+      </div>
+      {error && (
+        <span
+          style={{
+            color: "red",
+          }}
+        >
+          {error}
+        </span>
+      )}
 
-        <div className='gap-4'>
-          <Textarea
-            id="standard-basic"
-            autoComplete="off"
-            value={this.state.task}
-            onChange={this.onChangeTask}
-            placeholder="Add TO DO"
-          />
-          <Button
-            className="bg-yellow-400"
-            variant="contained"
-            color="primary"
-            size="small"
-            disabled={this.state.task == ''}
-            onClick={this.addTask}
+      <div className="my-3">
+        <Comments item={item} items={items} setItems={setItems} />
+      </div>
+
+    </div>
+  );
+};
+
+const Todos = () => {
+  // current todo item
+  const [todo, setTodo] = useState(null);
+  // todo items
+  const [items, setItems] = useState([]);
+  // error state
+  const [error, setError] = useState(null);
+
+  // add new todo item
+  const addTodo = () => {
+    setError(null);
+
+    // valdate if todo state is empty
+    if (!todo) {
+      // if empty render error
+      setError("Please enter a todo");
+      return;
+    }
+
+    // if no error grab the current items state, then append the new todo item
+    const newItems = [
+      ...items,
+      {
+        id: `todo_${items.length + 1}`,
+        title: todo,
+        edit: false,
+        comments: [],
+      },
+    ];
+
+    // update state
+    setItems(newItems);
+    // reset todo input
+    setTodo("");
+  };
+
+  return (
+    <div className="flex justify-center">
+      <div className="p-4 w-9/12 bg-cyan-100 rounded-md mt-20">
+        <Textarea
+          mb={2}
+          placeholder="Enter todo..."
+          value={todo}
+          onChange={(e) => setTodo(e.target.value)}
+         
+        />
+        {error && (
+          <div
+            style={{
+              color: "red",
+            }}
           >
-            Add
+            {error}
+          </div>
+        )}
+        <div className="flex justify-center">
+          <Button colorScheme="blue" mb={5} mr={2} onClick={addTodo} >
+            Add Todo
+          </Button>
+          <Button colorScheme="blue" mb={5} onClick={() => setItems([])}>
+            Clear Todo
           </Button>
         </div>
 
-        {this.state.todo_array.length > 0
-          ? <div className='bg-pink-400 w-9/12 flex justify-center items-center py-5 px-5 flex-col gap-3'>
-              <div className="bg-blue-200 w-full">
-              
-                    <div className='flex'>
-                      <div className='w-1/2 p-4'>Taskzzz</div>
-                      <div className='w-1/2 p-4'>Action</div>
-                    </div>
-                  
-                {this.state.todo_array.map ((object, i) => {
-                  return (
-                    <div className='bg-violet-400 w-full' >
-                        <div className='w-full bg-green-400 flex py-4'>
-                          <div className='w-1/2 bg-violet-100 py-4 px-4'>
-                            {object.is_editing
-                              ? <Textarea
-                                  id="standard-basic"
-                                  value={this.state.edit_task}
-                                  onChange={e => this.editTask (e.target.value)}
-                                />
-                              : object.is_done
-                                  ? <s>{object.name}</s>
-                                  : <span>{object.name}</span>}
-                          </div>
-                          <div className='w-1/2 bg-red-200 gap-3 py-4 px-4'>
-                            {object.is_editing
-                              ? <div className='flex gap-3'>
-                                  <Button
-                                    className="button_style"
-                                    variant="outlined"
-                                    color="primary"
-                                    size="small"
-                                    disabled={this.state.edit_task == ''}
-                                    onClick={e => this.saveEditTask (object)}
-                                  >
-                                    Save
-                                  </Button>
-                                  <Button
-                                    className="button_style"
-                                    variant="outlined"
-                                    color=""
-                                    size="small"
-                                    onClick={e => this.edit (object)}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              : <div className="flex gap-3"> 
-                                  <Button
-                                    className="button_style"
-                                    variant="outlined"
-                                    color="primary"
-                                    size="small"
-                                    onClick={e => this.edit (object)}
-                                  >
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    className="button_style"
-                                    variant="outlined"
-                                    color="secondary"
-                                    size="small"
-                                    disabled={object.is_done}
-                                    onClick={e => this.done (object)}
-                                  >
-                                    Done
-                                  </Button>
-                                  <Button
-                                    className="button_style"
-                                    variant="outlined"
-                                    size="small"
-                                    onClick={e => this.delete (object)}
-                                  >
-                                    Delete
-                                  </Button>
-                                </div>}
-                          </div>   
-                        </div>
-                        <div className="w-full bg-yellow-200 py-4 px-4">
-                          <p>comment</p>
-
-                          <Button
-                            className="bg-yellow-400"
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            disabled={this.state.comment == ''}
-                            onClick={this.addComment}
-                          >
-                            Add
-                          </Button>
-                        </div>
-                    </div>                    
-                  );
-                })}
-              </div>
-                
-            </div>
-          : <h2>Nothing to do!</h2>}
+        {/* todo items */}
+        <UnorderedList marginTop="20px">
+          {items.map((item, i) => (
+            <TodoItem marginTop="10px" key={i} item={item} items={items} setItems={setItems} />
+          ))}
+        </UnorderedList>
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
+
+export default Todos;
